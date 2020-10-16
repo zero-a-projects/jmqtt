@@ -30,6 +30,7 @@ import org.jmqtt.manage.HttpServer;
 import org.jmqtt.remoting.netty.ChannelEventListener;
 import org.jmqtt.remoting.netty.NettyRemotingServer;
 import org.jmqtt.remoting.netty.RequestProcessor;
+import org.jmqtt.remoting.session.ConnectManager;
 import org.jmqtt.store.*;
 import org.jmqtt.store.memory.DefaultMqttStore;
 import org.jmqtt.store.redis.RedisMqttStore;
@@ -37,10 +38,7 @@ import org.jmqtt.store.rocksdb.RDBMqttStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class BrokerController {
 
@@ -75,6 +73,8 @@ public class BrokerController {
     private ClusterSessionManager clusterSessionManager;
     private ClusterMessageTransfer clusterMessageTransfer;
     private HttpServer httpServer;
+    private final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryImpl(
+            "BrokerControllerScheduledThread"));
 
 
     public BrokerController(BrokerConfig brokerConfig, NettyConfig nettyConfig, StoreConfig storeConfig, ClusterConfig clusterConfig) {
@@ -166,7 +166,7 @@ public class BrokerController {
                 switch (clusterConfig.getClusterComponentName()) {
                     case "local":
                         this.clusterSessionManager = new DefaultClusterSessionManager(sessionStore, subscriptionStore);
-                        this.clusterMessageTransfer = new DefaultClusterMessageTransfer(messageDispatcher, clusterConfig);
+                        this.clusterMessageTransfer = new DefaultClusterMessageTransfer(messageDispatcher);
                         break;
                     case "redis":
                         this.clusterSessionManager = new RedisClusterSessionManager(sessionStore, subscriptionStore);
@@ -176,6 +176,12 @@ public class BrokerController {
             }
         }
 
+        scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                ConnectManager.getInstance().cleanConnectCloseClientSession();
+            }
+        }, 30, 300, TimeUnit.SECONDS);
     }
 
     /**
@@ -238,10 +244,11 @@ public class BrokerController {
         if (this.clusterMessageTransfer != null) {
             this.clusterMessageTransfer.startup();
         }
+
+        log.info("JMqtt Server start success and version = {}", brokerConfig.getVersion());
         if (this.httpServer != null) {
             this.httpServer.start();
         }
-        log.info("JMqtt Server start success and version = {}", brokerConfig.getVersion());
     }
 
     public void shutdown() {

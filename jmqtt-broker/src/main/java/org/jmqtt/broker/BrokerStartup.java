@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 
 public class BrokerStartup {
 
@@ -30,27 +31,27 @@ public class BrokerStartup {
     public static BrokerController start(String[] args) throws Exception {
         Options options = buildOptions();
         CommandLineParser parser = new DefaultParser();
-        CommandLine commandLine = parser.parse(options,args);
+        CommandLine commandLine = parser.parse(options, args);
         String jmqttHome = null;
         String jmqttConfigPath = null;
         BrokerConfig brokerConfig = new BrokerConfig();
         NettyConfig nettyConfig = new NettyConfig();
         StoreConfig storeConfig = new StoreConfig();
-        ClusterConfig clusterConfig =new ClusterConfig();
-        if(commandLine != null){
+        ClusterConfig clusterConfig = new ClusterConfig();
+        if (commandLine != null) {
             jmqttHome = commandLine.getOptionValue("h");
             jmqttConfigPath = commandLine.getOptionValue("c");
         }
-        if(StringUtils.isEmpty(jmqttHome)){
+        if (StringUtils.isEmpty(jmqttHome)) {
             jmqttHome = brokerConfig.getJmqttHome();
         }
-        if(StringUtils.isEmpty(jmqttHome)){
+        if (StringUtils.isEmpty(jmqttHome)) {
             throw new Exception("please set JMQTT_HOME.");
         }
-        if(StringUtils.isEmpty(jmqttConfigPath)){
+        if (StringUtils.isEmpty(jmqttConfigPath)) {
             jmqttConfigPath = jmqttHome + File.separator + "conf" + File.separator + "jmqtt.properties";
         }
-        initConfig(jmqttConfigPath,brokerConfig,nettyConfig,storeConfig, clusterConfig);
+        initConfig(jmqttConfigPath, brokerConfig, nettyConfig, storeConfig, clusterConfig);
 
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         JoranConfigurator configurator = new JoranConfigurator();
@@ -58,7 +59,7 @@ public class BrokerStartup {
         lc.reset();
         configurator.doConfigure(jmqttHome + "/conf/logback_broker.xml");
 
-        BrokerController brokerController = new BrokerController(brokerConfig,nettyConfig, storeConfig, clusterConfig);
+        BrokerController brokerController = new BrokerController(brokerConfig, nettyConfig, storeConfig, clusterConfig);
         brokerController.start();
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -71,40 +72,50 @@ public class BrokerStartup {
         return brokerController;
     }
 
-    private static Options buildOptions(){
+    private static Options buildOptions() {
         Options options = new Options();
-        Option opt = new Option("h",true,"jmqttHome,eg: /wls/xxx");
+        Option opt = new Option("h", true, "jmqttHome,eg: /wls/xxx");
         opt.setRequired(false);
         options.addOption(opt);
 
-        opt = new Option("c",true,"jmqtt.properties path,eg: /wls/xxx/xxx.properties");
+        opt = new Option("c", true, "jmqtt.properties path,eg: /wls/xxx/xxx.properties");
         opt.setRequired(false);
         options.addOption(opt);
 
         return options;
     }
 
-    private static void initConfig(String jmqttConfigPath, BrokerConfig brokerConfig, NettyConfig nettyConfig, StoreConfig storeConfig, ClusterConfig clusterConfig){
+    private static void initConfig(String jmqttConfigPath, BrokerConfig brokerConfig, NettyConfig nettyConfig, StoreConfig storeConfig, ClusterConfig clusterConfig) {
         Properties properties = new Properties();
-        BufferedReader  bufferedReader = null;
+        BufferedReader bufferedReader = null;
         try {
             bufferedReader = new BufferedReader(new FileReader(jmqttConfigPath));
             properties.load(bufferedReader);
-            MixAll.properties2POJO(properties,brokerConfig);
-            MixAll.properties2POJO(properties,nettyConfig);
-            MixAll.properties2POJO(properties,storeConfig);
+            MixAll.properties2POJO(properties, brokerConfig);
+            MixAll.properties2POJO(properties, nettyConfig);
+            MixAll.properties2POJO(properties, storeConfig);
             MixAll.properties2POJO(properties, clusterConfig);
+            setAttributeValueForSystem(properties);
         } catch (FileNotFoundException e) {
             System.out.println("jmqtt.properties cannot find,cause = " + e);
         } catch (IOException e) {
             System.out.println("Handle jmqttConfig IO exception,cause = " + e);
         } finally {
             try {
-                if(Objects.nonNull(bufferedReader)){
+                if (Objects.nonNull(bufferedReader)) {
                     bufferedReader.close();
                 }
             } catch (IOException e) {
                 System.out.println("Handle jmqttConfig IO exception,cause = " + e);
+            }
+        }
+    }
+
+    private static void setAttributeValueForSystem(Properties properties) {
+        if (null != properties && !properties.isEmpty()) {
+            Set<String> keys = properties.stringPropertyNames();
+            for (String key : keys) {
+                System.setProperty(key, properties.getProperty(key));
             }
         }
     }

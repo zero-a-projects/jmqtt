@@ -13,8 +13,7 @@ public abstract class ClusterSessionManager implements ClusterHandler {
     public CommandReqOrResp process(CommandReqOrResp request) {
         log.debug("[Cluster command],commandCode={}", request.getCommandCode());
         switch (request.getCommandCode()) {
-            case CommandCode
-                    .CONNECT_QUERY_LAST_STATE:
+            case CommandCode.CONNECT_QUERY_LAST_STATE:
                 return queryLastState(request);
             case CommandCode.CONNECT_GET_SUBSCRIPTIONS:
                 return getSubscriptions(request);

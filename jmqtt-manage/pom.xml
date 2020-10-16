@@ -5,16 +5,20 @@
     <parent>
         <artifactId>jmqtt</artifactId>
         <groupId>org.jmqtt</groupId>
-        <version>2.1.0</version>
+        <version>3.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <version>2.1.0</version>
+    <version>3.0.0</version>
     <artifactId>jmqtt-manage</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>org.jmqtt</groupId>
             <artifactId>jmqtt-common</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jmqtt</groupId>
+            <artifactId>jmqtt-remoting</artifactId>
         </dependency>
         <dependency>
             <groupId>top.hserver</groupId>

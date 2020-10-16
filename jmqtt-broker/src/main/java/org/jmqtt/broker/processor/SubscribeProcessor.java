@@ -18,6 +18,7 @@ import org.jmqtt.remoting.session.ClientSession;
 import org.jmqtt.remoting.session.ConnectManager;
 import org.jmqtt.remoting.util.MessageUtil;
 import org.jmqtt.remoting.util.NettyUtil;
+import org.jmqtt.remoting.util.RemotingHelper;
 import org.jmqtt.store.FlowMessageStore;
 import org.jmqtt.store.RetainMessageStore;
 import org.jmqtt.store.SubscriptionStore;
@@ -38,7 +39,7 @@ public class SubscribeProcessor implements RequestProcessor {
     private SubscriptionStore subscriptionStore;
     private PubSubPermission pubSubPermission;
 
-    public SubscribeProcessor(BrokerController controller){
+    public SubscribeProcessor(BrokerController controller) {
         this.subscriptionMatcher = controller.getSubscriptionMatcher();
         this.retainMessageStore = controller.getRetainMessageStore();
         this.flowMessageStore = controller.getFlowMessageStore();
@@ -52,46 +53,46 @@ public class SubscribeProcessor implements RequestProcessor {
         String clientId = NettyUtil.getClientId(ctx.channel());
         int messageId = subscribeMessage.variableHeader().messageId();
         ClientSession clientSession = ConnectManager.getInstance().getClient(clientId);
-        List<Topic> validTopicList =validTopics(clientSession,subscribeMessage.payload().topicSubscriptions());
-        if(validTopicList == null || validTopicList.size() == 0){
-            log.warn("[Subscribe] -> Valid all subscribe topic failure,clientId:{}",clientId);
+        List<Topic> validTopicList = validTopics(clientSession, subscribeMessage.payload().topicSubscriptions());
+        if (validTopicList == null || validTopicList.size() == 0) {
+            log.warn("[Subscribe] -> Valid all subscribe topic failure,clientId:{}", clientId);
             return;
         }
         List<Integer> ackQos = getTopicQos(validTopicList);
-        MqttMessage subAckMessage = MessageUtil.getSubAckMessage(messageId,ackQos);
+        MqttMessage subAckMessage = MessageUtil.getSubAckMessage(messageId, ackQos);
         ctx.writeAndFlush(subAckMessage);
         // send retain messages
-        List<Message> retainMessages = subscribe(clientSession,validTopicList);
-        dispatcherRetainMessage(clientSession,retainMessages);
+        List<Message> retainMessages = subscribe(clientSession, validTopicList);
+        dispatcherRetainMessage(clientSession, retainMessages);
     }
 
-    private List<Integer> getTopicQos(List<Topic> topics){
+    private List<Integer> getTopicQos(List<Topic> topics) {
         List<Integer> qoss = new ArrayList<>(topics.size());
-        for(Topic topic : topics){
+        for (Topic topic : topics) {
             qoss.add(topic.getQos());
         }
         return qoss;
     }
 
-    private List<Message> subscribe(ClientSession clientSession,List<Topic> validTopicList){
+    private List<Message> subscribe(ClientSession clientSession, List<Topic> validTopicList) {
         Collection<Message> retainMessages = null;
         List<Message> needDispatcher = new ArrayList<>();
-        for(Topic topic : validTopicList){
-            Subscription subscription = new Subscription(clientSession.getClientId(),topic.getTopicName(),topic.getQos());
+        for (Topic topic : validTopicList) {
+            Subscription subscription = new Subscription(clientSession.getClientId(), topic.getTopicName(), topic.getQos());
             boolean subRs = this.subscriptionMatcher.subscribe(subscription);
-            if(subRs){
-                if(retainMessages == null){
+            if (subRs) {
+                if (retainMessages == null) {
                     retainMessages = retainMessageStore.getAllRetainMessage();
                 }
-                for(Message retainMsg : retainMessages){
+                for (Message retainMsg : retainMessages) {
                     String pubTopic = (String) retainMsg.getHeader(MessageHeader.TOPIC);
-                    if(subscriptionMatcher.isMatch(pubTopic,subscription.getTopic())){
-                        int minQos = MessageUtil.getMinQos((int)retainMsg.getHeader(MessageHeader.QOS),topic.getQos());
-                        retainMsg.putHeader(MessageHeader.QOS,minQos);
+                    if (subscriptionMatcher.isMatch(pubTopic, subscription.getTopic())) {
+                        int minQos = MessageUtil.getMinQos((int) retainMsg.getHeader(MessageHeader.QOS), topic.getQos());
+                        retainMsg.putHeader(MessageHeader.QOS, minQos);
                         needDispatcher.add(retainMsg);
                     }
                 }
-                this.subscriptionStore.storeSubscription(clientSession.getClientId(),subscription);
+                this.subscriptionStore.storeSubscription(clientSession.getClientId(), subscription);
             }
         }
         retainMessages = null;
@@ -101,28 +102,30 @@ public class SubscribeProcessor implements RequestProcessor {
     /**
      * 返回校验合法的topic
      */
-    private List<Topic> validTopics(ClientSession clientSession,List<MqttTopicSubscription> topics){
+    private List<Topic> validTopics(ClientSession clientSession, List<MqttTopicSubscription> topics) {
         List<Topic> topicList = new ArrayList<>();
-        for(MqttTopicSubscription subscription : topics){
-            if(!pubSubPermission.subscribeVerify(clientSession.getClientId(),subscription.topicName())){
-                log.warn("[SubPermission] this clientId:{} have no permission to subscribe this topic:{}",clientSession.getClientId(),subscription.topicName());
+        ChannelHandlerContext ctx = clientSession.getCtx();
+        final String remoteIp = RemotingHelper.getRemoteIp(ctx.channel());
+        for (MqttTopicSubscription subscription : topics) {
+            if (!pubSubPermission.subscribeVerify(clientSession.getClientId(), subscription.topicName(),remoteIp)) {
+                log.warn("[SubPermission] this clientId:{} have no permission to subscribe this topic:{}", clientSession.getClientId(), subscription.topicName());
                 clientSession.getCtx().close();
                 return null;
             }
-            Topic topic = new Topic(subscription.topicName(),subscription.qualityOfService().value());
+            Topic topic = new Topic(subscription.topicName(), subscription.qualityOfService().value());
             topicList.add(topic);
         }
         return topicList;
     }
 
-    private void dispatcherRetainMessage(ClientSession clientSession,List<Message> messages){
-        for(Message message : messages){
-            message.putHeader(MessageHeader.RETAIN,true);
+    private void dispatcherRetainMessage(ClientSession clientSession, List<Message> messages) {
+        for (Message message : messages) {
+            message.putHeader(MessageHeader.RETAIN, true);
             int qos = (int) message.getHeader(MessageHeader.QOS);
-            if(qos > 0){
-                flowMessageStore.cacheSendMsg(clientSession.getClientId(),message);
+            if (qos > 0) {
+                flowMessageStore.cacheSendMsg(clientSession.getClientId(), message);
             }
-            MqttPublishMessage publishMessage = MessageUtil.getPubMessage(message,false,qos,clientSession.generateMessageId());
+            MqttPublishMessage publishMessage = MessageUtil.getPubMessage(message, false, qos, clientSession.generateMessageId());
             clientSession.getCtx().writeAndFlush(publishMessage);
         }
     }

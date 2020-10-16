@@ -28,10 +28,7 @@ import org.jmqtt.store.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 public class ConnectProcessor implements RequestProcessor {
@@ -121,6 +118,7 @@ public class ConnectProcessor implements RequestProcessor {
                 }
                 returnCode = MqttConnectReturnCode.CONNECTION_ACCEPTED;
                 NettyUtil.setClientId(ctx.channel(), clientId);
+                setAttributeValueForClientSession(heartbeatSec, userName, clientSession, mqttVersion);
                 ConnectManager.getInstance().putClient(clientId, clientSession);
             }
             MqttConnAckMessage ackMessage = MessageUtil.getConnectAckMessage(returnCode, sessionPresent);
@@ -132,9 +130,8 @@ public class ConnectProcessor implements RequestProcessor {
             }
             log.info("[CONNECT] -> {} connect to this mqtt server", clientId);
             reConnect2SendMessage(clientId);
-            newClientNotify(clientSession);
         } catch (Exception ex) {
-            log.warn("[CONNECT] -> Service Unavailable: cause={}", ex);
+            log.warn("[CONNECT] -> Service Unavailable: cause={}", ex.getMessage());
             returnCode = MqttConnectReturnCode.CONNECTION_REFUSED_SERVER_UNAVAILABLE;
             MqttConnAckMessage ackMessage = MessageUtil.getConnectAckMessage(returnCode, sessionPresent);
             ctx.writeAndFlush(ackMessage);
@@ -142,8 +139,12 @@ public class ConnectProcessor implements RequestProcessor {
         }
     }
 
-    private void newClientNotify(ClientSession clientSession) {
-
+    private void setAttributeValueForClientSession(int heartbeatSec, String userName, ClientSession clientSession, int mqttVersion) {
+        clientSession.setHeartbeatSec(heartbeatSec);
+        clientSession.setUserName(userName);
+        clientSession.setConnectionIp(RemotingHelper.getRemoteIp(clientSession.getCtx().channel()));
+        clientSession.setConnectionTime(new Date());
+        clientSession.setMqttVersion(mqttVersion == 4 ? "3.1.1" : "3.1");
     }
 
     private boolean keepAlive(String clientId, ChannelHandlerContext ctx, int heatbeatSec) {

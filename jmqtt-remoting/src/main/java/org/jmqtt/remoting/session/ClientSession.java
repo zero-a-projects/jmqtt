@@ -2,6 +2,7 @@ package org.jmqtt.remoting.session;
 
 import io.netty.channel.ChannelHandlerContext;
 
+import java.util.Date;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -10,17 +11,23 @@ public class ClientSession {
     private String clientId;
     private boolean cleanSession;
     private transient ChannelHandlerContext ctx;
+    private String userName;
+    private Date connectionTime;
+    private int heartbeatSec;
+    private String connectionIp;
+    private String mqttVersion;
 
     private transient AtomicInteger messageIdCounter = new AtomicInteger(1);
 
-    public ClientSession(){}
+    public ClientSession() {
+    }
 
-    public ClientSession(String clientId, boolean cleanSession){
+    public ClientSession(String clientId, boolean cleanSession) {
         this.clientId = clientId;
         this.cleanSession = cleanSession;
     }
 
-    public ClientSession(String clientId, boolean cleanSession,ChannelHandlerContext ctx){
+    public ClientSession(String clientId, boolean cleanSession, ChannelHandlerContext ctx) {
         this.clientId = clientId;
         this.cleanSession = cleanSession;
         this.ctx = ctx;
@@ -51,15 +58,54 @@ public class ClientSession {
         this.ctx = ctx;
     }
 
-    public int generateMessageId(){
+    public int generateMessageId() {
         int messageId = messageIdCounter.getAndIncrement();
-        messageId = Math.abs( messageId % 0xFFFF);
-        if(messageId == 0){
+        messageId = Math.abs(messageId % 0xFFFF);
+        if (messageId == 0) {
             return generateMessageId();
         }
         return messageId;
     }
 
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public Date getConnectionTime() {
+        return connectionTime;
+    }
+
+    public void setConnectionTime(Date connectionTime) {
+        this.connectionTime = connectionTime;
+    }
+
+    public int getHeartbeatSec() {
+        return heartbeatSec;
+    }
+
+    public void setHeartbeatSec(int heartbeatSec) {
+        this.heartbeatSec = heartbeatSec;
+    }
+
+    public String getConnectionIp() {
+        return connectionIp;
+    }
+
+    public void setConnectionIp(String connectionIp) {
+        this.connectionIp = connectionIp;
+    }
+
+    public String getMqttVersion() {
+        return mqttVersion;
+    }
+
+    public void setMqttVersion(String mqttVersion) {
+        this.mqttVersion = mqttVersion;
+    }
 
     @Override
     public boolean equals(Object o) {

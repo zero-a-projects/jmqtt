@@ -7,7 +7,7 @@
     <groupId>org.jmqtt</groupId>
     <artifactId>jmqtt</artifactId>
     <packaging>pom</packaging>
-    <version>2.1.0</version>
+    <version>3.0.0</version>
     <modules>
         <module>jmqtt-broker</module>
         <module>jmqtt-remoting</module>

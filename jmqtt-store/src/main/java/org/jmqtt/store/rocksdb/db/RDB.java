@@ -9,7 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class RDB {
@@ -194,14 +194,14 @@ public class RDB {
 
     private List<ColumnFamilyDescriptor> getCFDescriptors(){
         List<ColumnFamilyDescriptor> list = new ArrayList<>();
-        list.add(new ColumnFamilyDescriptor("default".getBytes(Charset.forName("UTF-8"))));
-        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.SESSION.getBytes(Charset.forName("UTF-8"))));
-        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.SUBSCRIPTION.getBytes(Charset.forName("UTF-8"))));
-        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.WILL_MESSAGE.getBytes(Charset.forName("UTF-8"))));
-        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.OFFLINE_MESSAGE.getBytes(Charset.forName("UTF-8"))));
-        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.REC_FLOW_MESSAGE.getBytes(Charset.forName("UTF-8"))));
-        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.SEND_FLOW_MESSAGE.getBytes(Charset.forName("UTF-8"))));
-        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.RETAIN_MESSAGE.getBytes(Charset.forName("UTF-8"))));
+        list.add(new ColumnFamilyDescriptor("default".getBytes(StandardCharsets.UTF_8)));
+        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.SESSION.getBytes(StandardCharsets.UTF_8)));
+        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.SUBSCRIPTION.getBytes(StandardCharsets.UTF_8)));
+        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.WILL_MESSAGE.getBytes(StandardCharsets.UTF_8)));
+        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.OFFLINE_MESSAGE.getBytes(StandardCharsets.UTF_8)));
+        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.REC_FLOW_MESSAGE.getBytes(StandardCharsets.UTF_8)));
+        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.SEND_FLOW_MESSAGE.getBytes(StandardCharsets.UTF_8)));
+        list.add(new ColumnFamilyDescriptor(RDBStorePrefix.RETAIN_MESSAGE.getBytes(StandardCharsets.UTF_8)));
         return list;
     }
 

@@ -100,5 +100,22 @@ public class RemotingHelper {
         return "";
     }
 
+    public static String getRemoteIp(Channel channel){
+        if (null == channel) {
+            return "";
+        }
+        SocketAddress remote = channel.remoteAddress();
+        final String addr = remote != null ? remote.toString() : "";
+        if (addr.length() > 0) {
+            int index = addr.lastIndexOf("/");
+            int endIndex = addr.lastIndexOf(":");
+            if (index >= 0 && endIndex >= 0) {
+                return addr.substring(index + 1,endIndex);
+            }
+            return addr;
+        }
+        return "";
+    }
+
 
 }
