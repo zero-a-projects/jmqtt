@@ -175,13 +175,6 @@ public class BrokerController {
                 }
             }
         }
-
-        scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                ConnectManager.getInstance().cleanConnectCloseClientSession();
-            }
-        }, 30, 300, TimeUnit.SECONDS);
     }
 
     /**

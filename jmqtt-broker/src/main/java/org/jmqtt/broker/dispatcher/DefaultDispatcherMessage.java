@@ -129,7 +129,7 @@ public class DefaultDispatcherMessage implements MessageDispatcher {
                         }
                     }
                 } catch (Exception ex) {
-                    log.warn("Dispatcher message failure,cause={}", ex);
+                    log.warn("Dispatcher message failure,cause={}", ex.getMessage());
                 }
             }
         }

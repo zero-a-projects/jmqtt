@@ -49,13 +49,4 @@ public class ConnectManager {
         }
         return clientSessionList;
     }
-
-    public void cleanConnectCloseClientSession() {
-        clientCache.forEach((key, value) -> {
-            if (value.getCtx().isRemoved()) {
-                clientCache.remove(key);
-                log.info("Jmqtt CleanConnectCloseClientSession ClientId:{}", key);
-            }
-        });
-    }
 }

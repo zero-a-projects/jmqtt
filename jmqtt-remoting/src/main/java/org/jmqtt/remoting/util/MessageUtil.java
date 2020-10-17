@@ -52,7 +52,7 @@ public class MessageUtil {
         if(message.getPayload() == null){
             heapBuf = Unpooled.EMPTY_BUFFER;
         }else{
-            heapBuf = Unpooled.wrappedBuffer((byte[])message.getPayload());
+            heapBuf = Unpooled.wrappedBuffer(message.getPayload());
         }
         return new MqttPublishMessage(fixedHeader,publishVariableHeader,heapBuf);
     }

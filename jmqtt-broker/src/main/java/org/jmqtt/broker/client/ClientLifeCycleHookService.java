@@ -6,6 +6,7 @@ import org.jmqtt.broker.dispatcher.MessageDispatcher;
 import org.jmqtt.common.log.LoggerName;
 import org.jmqtt.common.model.Message;
 import org.jmqtt.remoting.netty.ChannelEventListener;
+import org.jmqtt.remoting.session.ClientSession;
 import org.jmqtt.remoting.session.ConnectManager;
 import org.jmqtt.remoting.util.NettyUtil;
 import org.jmqtt.store.WillMessageStore;
@@ -31,6 +32,7 @@ public class ClientLifeCycleHookService implements ChannelEventListener {
     public void onChannelClose(String remoteAddr, Channel channel) {
         String clientId = NettyUtil.getClientId(channel);
         if(StringUtils.isNotEmpty(clientId)){
+            ConnectManager.getInstance().removeClient(clientId);
             if(willMessageStore.hasWillMessage(clientId)){
                 Message willMessage = willMessageStore.getWillMessage(clientId);
                 messageDispatcher.appendMessage(willMessage);
@@ -45,7 +47,9 @@ public class ClientLifeCycleHookService implements ChannelEventListener {
     @Override
     public void onChannelException(String remoteAddr, Channel channel) {
     	String clientId = NettyUtil.getClientId(channel);
-		ConnectManager.getInstance().removeClient(clientId);
+        if(StringUtils.isNotEmpty(clientId)){
+            ConnectManager.getInstance().removeClient(clientId);
+        }
 		log.warn("[ClientLifeCycleHook] -> {} channelException,close channel and remove ConnectCache!",clientId);
     }
 }
