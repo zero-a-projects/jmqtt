@@ -215,7 +215,7 @@
                     <span class="triangle"></span>
                 </div>
             </div>
-            <h2 class="h1">很抱歉，你访问的页面找不到了</h2>
+            <h2 class="h1">${message}</h2>
         </div>
     </div>
 </div>

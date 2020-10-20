@@ -45,7 +45,7 @@ public class ConnectManager {
     public List<ClientSession> getClientsInfo() {
         List<ClientSession> clientSessionList = null;
         if (!clientCache.isEmpty()) {
-            clientSessionList = new ArrayList<>(clientCache.values()).stream().sorted(Comparator.comparing(ClientSession::getConnectionTime)).collect(Collectors.toList());
+            clientSessionList = new ArrayList<>(new ArrayList<>(clientCache.values()));
         }
         return clientSessionList;
     }
